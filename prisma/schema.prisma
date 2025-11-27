@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Board {
+  id        String       @id @default(uuid())
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  rows      Int
+  columns   Int
+  states    BoardState[]
+}
+
+model BoardState {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  boardId   String
+  step      Int
+  state     String
+  // used for quick comparison of board states
+  hash      String
+  /// checks a board does not have duplicate steps
+  @@unique([boardId, step])
+  /// indexes for faster lookups
+  @@index([boardId, step])
+  @@index([boardId, hash])
+}
