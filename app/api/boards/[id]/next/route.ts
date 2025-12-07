@@ -4,17 +4,17 @@ import { handleApiError, NotFoundError } from "@/lib/errors";
 import { hashBoardState } from "@/lib/hash";
 import { getNextBoardState } from "@/core/gameOfLife";
 import {
-  getLatestBoardState,
-  saveBoardState,
+    getLatestBoardState,
+    saveBoardState,
 } from "@/infrastructure/boardRepository";
 
 export async function POST(
     req: NextRequest,
-    context: { params: { id: string } },
+    context: { params: Promise<{ id: string }> } ,
 ) {
     try {
         // getting the id from the route params
-        const id = context.params.id;
+        const { id } = await context.params;
         // validating the id to be valid
         const boardId = boardIdSchema.parse(id);
 
