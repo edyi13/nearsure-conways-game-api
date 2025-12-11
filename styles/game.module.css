@@ -1,0 +1,178 @@
+:root {
+    --gol-spacing-xs: 0.25rem;
+    --gol-spacing-sm: 0.5rem;
+    --gol-spacing-md: 1rem;
+    --gol-spacing-lg: 1.5rem;
+    --gol-radius-sm: 0.25rem;
+    --gol-radius-md: 0.5rem;
+    --gol-border-color: #e5e7eb;
+    --gol-bg-main: #6296ca;
+    --gol-bg-panel: #b4a9a9;
+    --gol-text-muted: #3a3a3a;
+    --gol-text-error: #b91c1c;
+    --gol-text-accent: #2563eb;
+    --gol-text-title: #000000;
+}
+
+/*layout*/
+
+.page {
+    min-height: 100vh;
+    padding: var(--gol-spacing-lg);
+    background-color: var(--gol-bg-main);
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    width: 100%;
+    max-width: 960px;
+    background-color: var(--gol-bg-panel);
+    border-radius: var(--gol-radius-md);
+    padding: var(--gol-spacing-lg);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: var(--gol-spacing-lg);
+}
+
+.header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gol-spacing-xs);
+}
+
+.title {
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.subtitle {
+    font-size: 0.9rem;
+    color: var(--gol-text-muted);
+}
+
+/*grid*/
+
+.gridWrapper {
+    border: 1px solid var(--gol-border-color);
+    border-radius: var(--gol-radius-md);
+    padding: var(--gol-spacing-sm);
+    background-color: #f3f4f6;
+}
+
+.grid {
+    display: inline-block;
+    border-radius: var(--gol-radius-sm);
+    overflow: hidden;
+}
+
+.gridRow {
+    display: flex;
+}
+
+.gridCell {
+    width: 20px;
+    height: 20px;
+    border: 1px solid #d1d5db;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    background-color: #ffffff;
+}
+
+.gridCellAlive {
+    background-color: #111827;
+}
+
+/*config-actions*/
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gol-spacing-sm);
+}
+
+.formRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gol-spacing-sm);
+    align-items: center;
+}
+
+.label {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.inputNumber {
+    width: 80px;
+    padding: var(--gol-spacing-xs) var(--gol-spacing-sm);
+    border-radius: var(--gol-radius-sm);
+    border: 1px solid var(--gol-border-color);
+    font-size: 0.85rem;
+}
+
+.buttonRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--gol-spacing-sm);
+}
+
+.button {
+    padding: var(--gol-spacing-xs) var(--gol-spacing-md);
+    border-radius: var(--gol-radius-sm);
+    border: 1px solid transparent;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background-color: #2563EB;
+    color: #ffffff;
+    border-color: var(--gol-border-color);
+}
+
+.buttonSecondary {
+    background-color: #00661f;
+    color: #ffffff;
+    border-color: var(--gol-border-color);
+}
+
+.buttonDisabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/*status*/
+
+.error {
+    color: var(--gol-text-error);
+    font-size: 0.85rem;
+}
+
+.warning {
+    color: #b45309;
+    font-size: 0.8rem;
+}
+
+.muted {
+    color: var(--gol-text-muted);
+    font-size: 0.8rem;
+}
+
+/*debug*/
+
+.debugPanel {
+    border-radius: var(--gol-radius-md);
+    border: 1px solid var(--gol-border-color);
+    padding: var(--gol-spacing-sm);
+    background-color: #f9fafb;
+    max-height: 500px;
+    overflow: auto;
+    color: var(--gol-text-muted);
+}
+
+.debugTitle {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-bottom: var(--gol-spacing-xs);
+    color: var(--gol-text-title);
+}

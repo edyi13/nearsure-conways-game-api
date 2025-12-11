@@ -135,3 +135,86 @@ Possible outcomes:
 - Stable state → `status: "STABLE"`
 - Oscillating board --> 422 error
 - Timeout after maxSteps --> 422 error
+
+
+# UI Improvements & Fixes
+
+This section documents the latest improvements applied to the Conway’s Game of Life UI, focusing on user experience, component behavior, and automated tests. These refinements are intended to enhance clarity, reduce unexpected behavior, and align the UI with common front-end best practices.
+
+---
+
+## 1. Preventing Confusing Warning Messages
+
+### Problem
+Previously, the UI displayed the message:
+
+```
+Board has local changes. Click "Create board" to sync before simulating.
+```
+
+even when the user had **not yet created a board**.  
+This was confusing because the warning implied that a backend board already existed.
+
+### Fix
+The warning is now displayed **only if both conditions are true**:
+
+- A board has already been created (`boardId !== null`)
+- The user has made additional edits not yet synced (`hasUnsavedChanges === true`)
+
+### Result
+- Before the first board creation → *No warning shown.*
+- After board creation + edits → *Warning shown correctly.*
+- Simulation buttons already respected this, so functional behavior remains correct.
+
+---
+
+## 2. Component Test Updates
+
+Because the UI no longer renders warnings or certain buttons under the same conditions as before, several unit tests were updated:
+
+### Changes Made
+- Tests were adjusted to query elements only when `boardId` is present.
+- `getByText` calls that previously matched multiple elements were replaced with:
+  - `getAllByText` when appropriate
+  - scoped queries using `within()` for isolated component testing
+- Tests now reflect the updated behavior of:
+  - `BoardActions`
+  - `BoardConfiguration`
+
+### Result
+All tests now pass consistently and accurately reflect intended UI behavior.
+
+---
+
+## 3. Behavior Alignment with Hook Logic
+
+The UI changes were coordinated with the logic in `useBoardSimulation`:
+
+- `hasUnsavedChanges` prevents simulation requests
+- `ensureCanSimulate()` enforces backend safety
+- UI now visualizes states only when appropriate  
+  → prevents confusing user feedback
+
+### Updated Workflow
+
+1. User toggles cells → **Local only**
+2. User clicks “Create board” → Syncs to backend
+3. User edits → `hasUnsavedChanges = true`
+4. User must sync again before simulating  
+   → prevents inconsistent runs
+
+This keeps UX predictable and forces deliberate actions.
+
+---
+
+## 4. Summary of Improvements
+
+### ✔ Correct warning visibility  
+### ✔ Tests updated to reflect new UI behavior  
+### ✔ Avoided ambiguous text matches  
+### ✔ Improved clarity in board lifecycle  
+### ✔ No backend or domain changes required  
+
+These changes improve clarity, consistency, and reliability.
+
+---

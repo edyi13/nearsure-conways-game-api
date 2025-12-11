@@ -1,6 +1,8 @@
 //  use client directive is necessary for React components that use hooks or other client-side features
 // and is required in Next.js 13+ with the app directory structure.
 "use client";
+import React, { memo } from "react";
+import styles from "@/styles/game.module.css";
 
 type Props = {
     rows: number;
@@ -9,50 +11,63 @@ type Props = {
     onReset: () => void;
 };
 
-export function BoardConfiguration({ rows, columns, onResize, onReset }: Props) {
+export const BoardConfiguration = memo(function BoardConfiguration({
+    rows,
+    columns,
+    onResize,
+    onReset,
+}: Props) {
+    const handleRowsChange = (value: string) => {
+        const num = Number(value);
+        if (Number.isNaN(num)) return;
+        onResize(Math.max(1, num), columns);
+    };
+
+    const handleColsChange = (value: string) => {
+        const num = Number(value);
+        if (Number.isNaN(num)) return;
+        onResize(rows, Math.max(1, num));
+    };
+
     return (
-        <section style={{ marginBottom: "1.5rem", padding: "1rem", border: "1px solid #ddd", borderRadius: "0.5rem" }} >
-            <h2 style={{ fontSize: "1.2rem", marginBottom: "0.75rem" }}>
-                Board configuration
-            </h2>
-            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "0.75rem" }}>
-                <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    Rows
-                    <input type="number"
-                            min={1}
-                            max={50}
-                            value={rows}
-                            onChange={(e) =>
-                                onResize(Number(e.target.value) || 1, columns)
-                            }
-                            style={{ padding: "0.25rem 0.5rem", width: "6rem" }}
-                    />
-                </label>
-                <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                    Columns
-                    <input type="number"
-                            min={1}
-                            max={50}
-                            value={columns}
-                            onChange={(e) =>
-                                onResize(rows, Number(e.target.value) || 1)
-                            }
-                            style={{ padding: "0.25rem 0.5rem", width: "6rem" }}
-                    />
-                </label>
-            </div>
-            <button type="button"
-                    onClick={onReset}
-                    style={{
-                        padding: "0.4rem 0.8rem",
-                        borderRadius: "0.4rem",
-                        border: "1px solid #ccc",
-                        background: "#00BFA5",
-                        cursor: "pointer",
-                    }}
+        <section className={styles.section}>
+        <div className={styles.formRow}>
+            <label className={styles.label}>
+                Rows:
+                <input
+                    type="number"
+                    className={styles.inputNumber}
+                    min={1}
+                    max={50}
+                    value={rows}
+                    onChange={(e) => handleRowsChange(e.target.value)}
+                />
+            </label>
+
+            <label className={styles.label}>
+                Columns:
+                <input
+                    type="number"
+                    className={styles.inputNumber}
+                    min={1}
+                    max={50}
+                    value={columns}
+                    onChange={(e) => handleColsChange(e.target.value)}
+                />
+            </label>
+
+            <button
+            type="button"
+            className={`${styles.button} ${styles.buttonSecondary}`}
+            onClick={onReset}
             >
-                Reset grid
+            Reset board
             </button>
+        </div>
+        <p className={styles.muted}>
+            Edit the dimensions and then update the board. You can toggle individual
+            cells directly in the grid.
+        </p>
         </section>
     );
-}
+});

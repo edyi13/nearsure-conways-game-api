@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import type { Cells, BoardStateResponse } from "@/lib/uiTypes";
 
+const DEFAULT_ROWS = 10;
+const DEFAULT_COLUMNS = 10;
 const MAX_ROWS = 50;
 const MAX_COLUMNS = 50;
 
@@ -13,19 +15,17 @@ function createGrid(rows: number, columns: number): Cells {
 }
 
 export function useBoardSimulation(
-    initialRows: number = MAX_ROWS,
-    initialCols: number = MAX_COLUMNS
+    initialRows: number = DEFAULT_ROWS,
+    initialColumns: number = DEFAULT_COLUMNS
 ) {
     const [rows, setRows] = useState(initialRows);
-    const [columns, setColumns] = useState(initialCols);
+    const [columns, setColumns] = useState(initialColumns);
     const [cells, setCells] = useState<Cells>(() =>
-        createGrid(initialRows, initialCols)
+        createGrid(initialRows, initialColumns)
     );
 
     const [boardId, setBoardId] = useState<string | null>(null);
-    const [lastResponse, setLastResponse] = useState<BoardStateResponse | null>(
-        null
-    );
+    const [lastResponse, setLastResponse] = useState<BoardStateResponse | null>(null);
 
     const [stepsToAdvance, setStepsToAdvance] = useState<number>(5);
     const [maxStepsFinal, setMaxStepsFinal] = useState<number>(100);
@@ -33,185 +33,193 @@ export function useBoardSimulation(
     const [loading, setLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    // 🔹 Flag para saber si el grid tiene cambios locales no sincronizados con el backend
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-    function markDirty() {
+    const markDirty = useCallback(() => {
         setHasUnsavedChanges(true);
-    }
+    }, []);
 
-    function clearDirty() {
+    const clearDirty = useCallback(() => {
         setHasUnsavedChanges(false);
-    }
+    }, []);
 
-    function resetBoard() {
-        setCells(createGrid(rows, columns));
+    const resetBoard = useCallback(() => {
+        setCells((prev) => createGrid(prev.length || rows, prev[0]?.length || columns));
         setBoardId(null);
         setLastResponse(null);
         setErrorMessage(null);
         markDirty();
-    }
+    }, [columns, rows, markDirty]);
 
-    function resizeGrid(newRows: number, newCols: number) {
-        const safeRows = Math.max(1, Math.min(newRows, MAX_ROWS));
-        const safeCols = Math.max(1, Math.min(newCols, MAX_COLUMNS));
+    const resizeGrid = useCallback((newRows: number, newColumns: number) => {
+            const safeRows = Math.max(1, Math.min(newRows, MAX_ROWS));
+            const safeColumns = Math.max(1, Math.min(newColumns, MAX_COLUMNS));
 
-        setRows(safeRows);
-        setColumns(safeCols);
-        setCells(createGrid(safeRows, safeCols));
-        setBoardId(null);
-        setLastResponse(null);
-        setErrorMessage(null);
-        markDirty();
-    }
+            setRows(safeRows);
+            setColumns(safeColumns);
+            setCells(createGrid(safeRows, safeColumns));
+            setBoardId(null);
+            setLastResponse(null);
+            setErrorMessage(null);
+            markDirty();
+        },
+        [markDirty]
+    );
 
-    function toggleCell(r: number, c: number) {
-        setCells((prev) => {
-        const next = prev.map((row) => [...row]);
-        next[r][c] = next[r][c] === 1 ? 0 : 1;
-        return next;
-        });
-        markDirty();
-    }
+    const toggleCell = useCallback(
+        (r: number, c: number) => {
+            setCells((prev) => {
+                const next = prev.map((row) => [...row]);
+                next[r][c] = next[r][c] === 1 ? 0 : 1;
+                return next;
+            });
+            markDirty();
+        },
+        [markDirty]
+    );
 
-    async function parseResponse(res: Response, defaultError: string) {
-        const json = (await res.json()) as BoardStateResponse;
+    const parseResponse = useCallback(
+        async (res: Response, defaultError: string): Promise<BoardStateResponse> => {
+            const json = (await res.json()) as BoardStateResponse;
 
-        if (!res.ok) {
-        throw new Error(json?.error?.message ?? defaultError);
-        }
+            if (!res.ok) {
+                throw new Error(json?.error?.message ?? defaultError);
+            }
 
-        return json;
-    }
+            return json;
+        },
+        []
+    );
 
-    function ensureCanSimulate(): boolean {
+    const ensureCanSimulate = useCallback((): boolean => {
         if (!boardId) {
-        setErrorMessage("Please create a board before simulating.");
-        return false;
+            setErrorMessage("Please create a board before simulating.");
+            return false;
         }
         if (hasUnsavedChanges) {
-        setErrorMessage(
-            "Board has local changes. Click 'Create board' to sync before simulating."
-        );
-        return false;
+            setErrorMessage(
+                "Board has local changes. Click 'Create board' to sync before simulating."
+            );
+            return false;
         }
         return true;
-    }
+    }, [boardId, hasUnsavedChanges]);
 
-    async function createBoard() {
+    const createBoard = useCallback(async () => {
         setLoading(true);
         setErrorMessage(null);
 
         try {
-        const res = await fetch("/api/boards", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ rows, columns, cells }),
-        });
+            const res = await fetch("/api/boards", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ rows, columns, cells }),
+            });
 
-        const json = await parseResponse(res, "Failed to create board.");
+            const json = await parseResponse(res, "Failed to create board.");
 
-        setBoardId(json.boardId ?? null);
+            setBoardId(json.boardId ?? null);
 
-        // Opcional: si el backend normaliza el board, usamos su versión
-        if (json.state?.cells) {
-            setCells(json.state.cells);
-        }
+            if (json.state?.cells) {
+                setCells(json.state.cells);
+            }
 
-        setLastResponse(json);
-        clearDirty(); // 🔹 ya estamos en sync con el backend
+            setLastResponse(json);
+            clearDirty();
         } catch (err: any) {
-        setErrorMessage(err?.message ?? "Unexpected error creating board.");
+            console.error("useBoardSimulation:createBoard", err);
+            setErrorMessage(err?.message ?? "Unexpected error creating board.");
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
-    }
+    }, [rows, columns, cells, parseResponse, clearDirty]);
 
-    async function nextState() {
+    const nextState = useCallback(async () => {
         if (!ensureCanSimulate()) return;
 
         setLoading(true);
         setErrorMessage(null);
 
         try {
-        const res = await fetch(`/api/boards/${boardId}/next`, {
-            method: "POST",
-        });
+            const res = await fetch(`/api/boards/${boardId}/next`, {
+                method: "POST",
+            });
 
-        const json = await parseResponse(res, "Failed to get next state.");
+            const json = await parseResponse(res, "Failed to get next state.");
 
-        if (json.state?.cells) {
-            setCells(json.state.cells);
-        }
+            if (json.state?.cells) {
+                setCells(json.state.cells);
+            }
 
-        setLastResponse(json);
-        // 🔹 A partir de aquí el estado local SIEMPRE viene del backend
-        clearDirty();
+            setLastResponse(json);
+            clearDirty();
         } catch (err: any) {
-        setErrorMessage(err?.message ?? "Unexpected error computing next state.");
+            console.error("useBoardSimulation:nextState", err);
+            setErrorMessage(err?.message ?? "Unexpected error computing next state.");
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
-    }
+    }, [boardId, ensureCanSimulate, parseResponse, clearDirty]);
 
-    async function advance() {
+    const advance = useCallback(async () => {
         if (!ensureCanSimulate()) return;
 
         setLoading(true);
         setErrorMessage(null);
 
         try {
-        const res = await fetch(`/api/boards/${boardId}/advance`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ steps: stepsToAdvance }),
-        });
+            const res = await fetch(`/api/boards/${boardId}/advance`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ steps: stepsToAdvance }),
+            });
 
-        const json = await parseResponse(res, "Failed to advance board.");
+            const json = await parseResponse(res, "Failed to advance board.");
 
-        if (json.state?.cells) {
-            setCells(json.state.cells);
-        }
+            if (json.state?.cells) {
+                setCells(json.state.cells);
+            }
 
-        setLastResponse(json);
-        clearDirty();
+            setLastResponse(json);
+            clearDirty();
         } catch (err: any) {
-        setErrorMessage(err?.message ?? "Unexpected error advancing board.");
+            console.error("useBoardSimulation:advance", err);
+            setErrorMessage(err?.message ?? "Unexpected error advancing board.");
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
-    }
+    }, [boardId, stepsToAdvance, ensureCanSimulate, parseResponse, clearDirty]);
 
-    async function finalState() {
+    const finalState = useCallback(async () => {
         if (!ensureCanSimulate()) return;
 
         setLoading(true);
         setErrorMessage(null);
 
         try {
-        const res = await fetch(`/api/boards/${boardId}/final`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ maxSteps: maxStepsFinal }),
-        });
+            const res = await fetch(`/api/boards/${boardId}/final`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ maxSteps: maxStepsFinal }),
+            });
 
-        const json = await parseResponse(res, "Failed to compute final state.");
+            const json = await parseResponse(res, "Failed to compute final state.");
 
-        if (json.state?.cells) {
-            setCells(json.state.cells);
-        }
+            if (json.state?.cells) {
+                setCells(json.state.cells);
+            }
 
-        setLastResponse(json);
-        clearDirty();
+            setLastResponse(json);
+            clearDirty();
         } catch (err: any) {
-        setErrorMessage(err?.message ?? "Unexpected error computing final state.");
+            console.error("useBoardSimulation:finalState", err);
+            setErrorMessage(err?.message ?? "Unexpected error computing final state.");
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
-    }
+    }, [boardId, maxStepsFinal, ensureCanSimulate, parseResponse, clearDirty]);
 
     return {
-        // state
         rows,
         columns,
         cells,
@@ -223,14 +231,12 @@ export function useBoardSimulation(
         errorMessage,
         hasUnsavedChanges,
 
-        // setters-helpers
         resizeGrid,
         toggleCell,
         resetBoard,
         setStepsToAdvance,
         setMaxStepsFinal,
 
-        // actions
         createBoard,
         nextState,
         advance,

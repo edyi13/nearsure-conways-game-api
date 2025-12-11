@@ -8,8 +8,15 @@ export default defineConfig({
         },
     },
     test: {
-        environment: "node",
+        environment: "jsdom",
         root: ".",
-        include: ["**/*.test.ts"],
+        include: [
+            "tests/**/*.test.ts",
+            "tests/**/*.test.tsx",
+            "components/**/*.test.tsx",
+            "components/**/__tests__/**/*.test.tsx",
+            "hooks/**/__tests__/**/*.test.ts",
+            "hooks/**/__tests__/**/*.test.tsx",
+        ],
     },
 });
